@@ -1,11 +1,9 @@
-import csv
+# Author: Sabastian Highton
+# Info: Used for crypto API calling and storing relevant information into csv file
 
-import seaborn as sns
-import matplotlib.pyplot as plt
-import pandas as pd
+import csv
 from datetime import datetime
 import requests
-from matplotlib import rcParams
 
 RAPID_API_KEY = "4b6872356fmsh4de9af3f8449e91p1640e8jsn691817a923ae"
 RAPID_API_HOST = "coinranking1.p.rapidapi.com"
@@ -56,6 +54,8 @@ def run():
 
 run()
 
+# Plot for inspection and testing
+'''
 df = pd.read_csv('history.csv')
 
 sns.set(style='darkgrid')
@@ -66,3 +66,4 @@ ax = sns.lineplot(x='Timestamp', y='Value', dashes=False, markers=True, data=df,
 ax.set_title('Coin: ' + 'BTC')
 plt.xticks(rotation=45, horizontalalignment='right', fontweight='light', fontsize='xx-small')
 plt.show()
+'''
