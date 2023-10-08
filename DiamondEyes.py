@@ -4,6 +4,7 @@
 import csv
 from datetime import datetime
 import requests
+import re
 
 RAPID_API_KEY = "4b6872356fmsh4de9af3f8449e91p1640e8jsn691817a923ae"
 RAPID_API_HOST = "coinranking1.p.rapidapi.com"
@@ -35,6 +36,60 @@ def parseTimestamp(input_data):
     return calendarTime
 
 
+# For use on past data
+# Add the time changes between each bitcoin info check to the history.csv file
+def addTimesChanges():
+    calendarTimeList = []
+    f = open("history.csv", "r")
+    for line in f:
+        match = re.match(r'\d+:\d+-\d+/\d+/\d+', line)
+        if match:
+            calendarTimeList.append(datetime.strptime(match.group(), '%H:%M-%m/%d/%Y'))
+    timestamps = []
+    for time in calendarTimeList:
+        ts = datetime.timestamp(time)
+        timestamps.append(ts)
+    times_between = []
+    for i in range(len(timestamps)):
+        if i == 0:
+            temp = timestamps[i]
+            times_between.append(0)
+        elif i == 1:
+            times_between.append(timestamps[i] - temp)
+        else:
+            times_between.append(timestamps[i] - timestamps[i - 1])
+    fread = open("history.csv", "r")
+    save = fread.read().split()
+    file = open("history.csv", "w")
+    i = -1
+    for line in save:
+        if i == -1:
+            file.write(line + '\n')
+        elif i == 0:
+            file.write(line.split()[0] + ",0" + '\n')
+        else:
+            file.write(line.split()[0] + "," + str(int(times_between[i])) + '\n')
+        i += 1
+
+
+# For use on new data
+# Add the time change between each bitcoin info check to the history.csv file
+def parseTimeChange():
+    fread = open("history.csv", "r")
+    fread_split = fread.read().split()
+    second_last_date = datetime.timestamp(datetime.strptime(fread_split[-2].split(',')[0], '%H:%M-%m/%d/%Y'))
+    last_date = datetime.timestamp(datetime.strptime(fread_split[-1].split(',')[0], '%H:%M-%m/%d/%Y'))
+    time_between = last_date - second_last_date
+    file = open("history.csv", "w")
+    i = 0
+    for line in fread_split:
+        if fread_split[i] != fread_split[-1]:
+            file.write(line + '\n')
+        else:
+            file.write(line.split()[0] + "," + str(int(time_between)) + '\n')
+        i += 1
+
+
 def parseValues(input_data):
     valueList = [input_data["data"]["coin"]["price"],
                  input_data["data"]["coin"]["24hVolume"],
@@ -50,20 +105,7 @@ def run():
         with open('history.csv', 'a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(inputData["Timestamp"] + inputData["Value"])
+    parseTimeChange()
 
 
-run()
-
-# Plot for inspection and testing
-'''
-df = pd.read_csv('history.csv')
-
-sns.set(style='darkgrid')
-rcParams['figure.figsize'] = 13, 5
-rcParams['figure.subplot.bottom'] = 0.2
-
-ax = sns.lineplot(x='Timestamp', y='Value', dashes=False, markers=True, data=df, sort=False)
-ax.set_title('Coin: ' + 'BTC')
-plt.xticks(rotation=45, horizontalalignment='right', fontweight='light', fontsize='xx-small')
-plt.show()
-'''
+# run()
