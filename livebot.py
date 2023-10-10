@@ -24,7 +24,7 @@ api = REST(key_id=KEY_ID, secret_key=SECRET_KEY, base_url=BASE_URL)
 
 SYMBOL = ['BTC/USD']
 SYM = 'BTCUSD'
-starting_money = 99000
+starting_money = 95000
 SMA_FAST = 12
 SMA_SLOW = 24
 QTY_PER_TRADE = 1
@@ -257,7 +257,7 @@ class Agent:
                     buy_units = self.max_buy
                 else:
                     buy_units = buy
-                if close[t] == close[close_length - 1]:
+                if close[t] in close[close_length - 1: close_length]:
                     buy_switch = True
                 total_buy = buy_units * close[t]
                 money -= total_buy
@@ -276,7 +276,7 @@ class Agent:
                     sell_units = quantity
                 if sell_units < 1:
                     continue
-                if close[t] == close[close_length - 1]:
+                if close[t] in close[close_length - 1: close_length]:
                     sell_switch = True
                 quantity -= sell_units
                 total_sell = sell_units * close[t]
@@ -319,29 +319,31 @@ while True:
 
     model = Model(input_size=window_size, layer_size=500, output_size=3)
     agent = Agent(a_model=model, money=starting_money, max_buy=1, max_sell=1)
-    agent.fit(iterations=100, checkpoint=20)
+    agent.fit(iterations=500, checkpoint=500)
 
     # CHECK POSITIONS
     position = get_position(symbol=SYM)
-    # should_buy_sma = get_signal(bars.sma_fast, bars.sma_slow)
+    should_buy_sma = get_signal(bars.sma_fast, bars.sma_slow)
     can_buy = canBuy(SYM)
     can_sell = canSell(SYM)
     agent_buy, agent_sell, agent_good = agent.buy()
     print(f"Position: {position} / Can Buy: {can_buy} / RL Buy: {agent_buy} / RL Sell: {agent_sell} / "
-          f"RL Good: {agent_good}")
-    if position >= 0 and can_buy and agent_good and agent_buy:
+          f"RL Good: {agent_good} / SMA Buy: {should_buy_sma}")
+    if (((((position >= 0) & can_buy) & agent_good) & agent_buy) & should_buy_sma):
         # WE BUY ONE BITCOIN
+        print("tip toe")
         api.submit_order(SYM, qty=QTY_PER_TRADE, side='buy', time_in_force="gtc")
         print(f'Symbol: {SYM} / Side: BUY / Quantity: {QTY_PER_TRADE}')
         print(f"New Position: {get_position(symbol=SYM)}")
         print("*" * 20, 'buy\n')
-        time.sleep(get_pause())
-    elif position > 0 and can_sell and agent_good and not agent_buy and agent_sell:
+        # time.sleep(get_pause())
+    elif ((((((position > 0) & can_sell) & agent_good) & (agent_buy != True)) & agent_sell) & (should_buy_sma != True)):
         # WE SELL ONE BITCOIN
+        print("tip toe")
         api.submit_order(SYM, qty=QTY_PER_TRADE, side='sell', time_in_force="gtc")
         print(f'Symbol: {SYM} / Side: SELL / Quantity: {QTY_PER_TRADE}')
         print(f"New Position: {get_position(symbol=SYM)}")
         print("*" * 20, 'sell\n')
-        time.sleep(get_pause())
+        # time.sleep(get_pause())
     else:
         print("*" * 20, 'no action\n')
