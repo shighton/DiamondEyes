@@ -178,7 +178,7 @@ class DeepEvolutionStrategy:
                     break
 
             print('\rEpoch ' + str(i) + ' out of ' + str(epoch) + ' reward: '
-                  + str(self.reward_function(self.weights)), end='')
+                  + '{0:.2f}'.format(self.reward_function(self.weights)), end='')
             if (i + 1) % print_every == 0:
                 print(
                     '\riter %d. reward: %f'
@@ -362,11 +362,11 @@ while True:
     able_sell = can_sell(SYM)
     agent_buy, agent_sell, agent_good = agent.buy()
     # if ((((((position >= 0) & able_buy) & agent_good) & agent_buy) & should_buy_sma) & (agent_sell != True)):
-    if ((((((position >= 0) & able_buy) & agent_good) & agent_buy) & (agent_sell != True))):
+    if ((((position >= 0) & able_buy) & agent_good) & agent_buy):
         # print(f"\rPosition: {position} / Can Buy: {able_buy} / RL Buy: {agent_buy} / RL Sell: {agent_sell} / "
         # f"RL Good: {agent_good} / SMA Buy: {should_buy_sma}")
-        print(f"\rPosition: {position} / Can Buy: {able_buy} / RL Buy: {agent_buy} / RL Sell: {agent_sell} / "
-              f"RL Good: {agent_good}")
+        print(f"\rPosition: {position} / Can Buy: {able_buy} / Can Sell: {able_sell} / RL Buy: {agent_buy} / "
+              f"RL Sell: {agent_sell} / RL Good: {agent_good}")
         api.submit_order(SYM, qty=QTY_PER_TRADE, side='buy', time_in_force="gtc")
         print(f'Symbol: {SYM} / Side: BUY / Quantity: {QTY_PER_TRADE}')
         time.sleep(2)  # Give position time to update
@@ -378,8 +378,8 @@ while True:
     elif (((((position > 0) & able_sell) & agent_good) & (agent_buy != True)) & agent_sell):
         # print(f"\rPosition: {position} / Can Buy: {able_buy} / RL Buy: {agent_buy} / RL Sell: {agent_sell} / "
         # f"RL Good: {agent_good} / SMA Buy: {should_buy_sma}")
-        print(f"\rPosition: {position} / Can Buy: {able_buy} / RL Buy: {agent_buy} / RL Sell: {agent_sell} / "
-              f"RL Good: {agent_good}")
+        print(f"\rPosition: {position} / Can Buy: {able_buy} / Can Sell: {able_sell} / RL Buy: {agent_buy} / "
+              f"RL Sell: {agent_sell} / RL Good: {agent_good}")
         api.submit_order(SYM, qty=QTY_PER_TRADE, side='sell', time_in_force="gtc")
         print(f'Symbol: {SYM} / Side: SELL / Quantity: {QTY_PER_TRADE}')
         time.sleep(2)  # Give position time to update
@@ -389,8 +389,8 @@ while True:
     else:
         # print(f"\rPosition: {position} / Can Buy: {able_buy} / RL Buy: {agent_buy} / RL Sell: {agent_sell} / "
         # f"RL Good: {agent_good} / SMA Buy: {should_buy_sma}", end='')
-        print(f"\rPosition: {position} / Can Buy: {able_buy} / RL Buy: {agent_buy} / RL Sell: {agent_sell} / "
-              f"RL Good: {agent_good}", end='')
+        print(f"\rPosition: {position} / Can Buy: {able_buy} / Can Sell: {able_sell} / RL Buy: {agent_buy} / "
+              f"RL Sell: {agent_sell} / RL Good: {agent_good}", end='')
         time.sleep(5)
         no_action_count += 1
         print('\r' + 'No action #' + str(no_action_count), end='')
