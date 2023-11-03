@@ -367,7 +367,8 @@ while True:
         # f"RL Good: {agent_good} / SMA Buy: {should_buy_sma}")
         print(f"\rPosition: {position} / Can Buy: {able_buy} / Can Sell: {able_sell} / RL Buy: {agent_buy} / "
               f"RL Sell: {agent_sell} / RL Good: {agent_good}")
-        api.submit_order(SYM, qty=QTY_PER_TRADE, side='buy', time_in_force="gtc")
+        # api.submit_order(SYM, qty=QTY_PER_TRADE, side='buy', time_in_force="gtc")
+        api.submit_order(SYM, qty=QTY_PER_TRADE, side='sell', time_in_force="gtc")
         print(f'Symbol: {SYM} / Side: BUY / Quantity: {QTY_PER_TRADE}')
         time.sleep(2)  # Give position time to update
         print(f"New Position: {get_position(symbol=SYM)}")
@@ -380,7 +381,8 @@ while True:
         # f"RL Good: {agent_good} / SMA Buy: {should_buy_sma}")
         print(f"\rPosition: {position} / Can Buy: {able_buy} / Can Sell: {able_sell} / RL Buy: {agent_buy} / "
               f"RL Sell: {agent_sell} / RL Good: {agent_good}")
-        api.submit_order(SYM, qty=QTY_PER_TRADE, side='sell', time_in_force="gtc")
+        # api.submit_order(SYM, qty=QTY_PER_TRADE, side='sell', time_in_force="gtc")
+        api.submit_order(SYM, qty=QTY_PER_TRADE, side='buy', time_in_force="gtc")
         print(f'Symbol: {SYM} / Side: SELL / Quantity: {QTY_PER_TRADE}')
         time.sleep(2)  # Give position time to update
         print(f"New Position: {get_position(symbol=SYM)}")
