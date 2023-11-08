@@ -24,8 +24,8 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=DeprecationWarning)
 
 BASE_URL = "https://paper-api.alpaca.markets"
-KEY_ID = 'PKVZ6WQ5B5AHJZPKUZVE'
-SECRET_KEY = 'AtDuRfZ51IO1JfgL9u7ENiMwnyT13hqewtQ3bspG'
+KEY_ID = 'PKNTDYKX9SW3RRWPBD0Z'
+SECRET_KEY = '0HN9VFrPt0Gcpxkh0RMe6pCc9gA7vHAKHRaodfmQ'
 
 # Instantiate REST API Connection
 api = REST(key_id=KEY_ID, secret_key=SECRET_KEY, base_url=BASE_URL)
@@ -338,6 +338,8 @@ class Agent:
 
 
 # Last x minutes of information in each state
+
+# Try smaller values
 window_size = 10
 
 step_size = 1
