@@ -141,7 +141,7 @@ while True:
     buy_low = bars.close.values.tolist()[-1] < transactions[-1]
     sell_high = bars.close.values.tolist()[-1] > transactions[-1]
 
-    if ((((position >= 0) & able_buy) & should_buy_sma) & buy_low):
+    if ((((position >= 0) & able_buy) & (should_buy_sma | o_sold)) & buy_low):
         print(f"\rPosition: {position} / Can Buy: {able_buy} / Can Sell: {able_sell} / SMA Buy: {should_buy_sma}"
               f" / Buy Low: {buy_low} / Sell High: {sell_high}")
         api.submit_order(SYM, qty=QTY_PER_TRADE, side='buy', time_in_force="gtc")
@@ -151,7 +151,7 @@ while True:
         print(f"New Position: {get_position(symbol=SYM)}")
         print("*" * 20, 'buy\n')
         no_action_count = 0
-    elif ((((position >= 0) & able_sell) & (should_buy_sma != True)) & sell_high):
+    elif ((((position >= 0) & able_sell) & ((should_buy_sma == False) | o_bought)) & sell_high):
         print(f"\rPosition: {position} / Can Buy: {able_buy} / Can Sell: {able_sell} / SMA Buy: {should_buy_sma}"
               f" / Buy Low: {buy_low} / Sell High: {sell_high}")
         api.submit_order(SYM, qty=QTY_PER_TRADE, side='sell', time_in_force="gtc")
