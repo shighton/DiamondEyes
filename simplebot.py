@@ -67,31 +67,23 @@ def bollinger_bands(series: pd.Series, length: int = 20, *,
                     num_stds: tuple[float, ...] = (2, 0, -2), prefix: str = '') -> pd.DataFrame:
     # Ref: https://stackoverflow.com/a/74283044/
     rolling = series.rolling(length)
-    bband0 = rolling.mean()
-    bband_std = rolling.std(ddof=0)
-    df = pd.DataFrame({f'{prefix}{num_std}': (bband0 + (bband_std * num_std)) for num_std in num_stds})
+    b_band0 = rolling.mean()
+    b_band_std = rolling.std(ddof=0)
+    df = pd.DataFrame({f'{prefix}{num_std}': (b_band0 + (b_band_std * num_std)) for num_std in num_stds})
     # sns.lineplot(df)
     # plt.show()
     return df
 
 
-def over_bought_and_sold(df):
-    oversold = []
-    overbought = []
-
-    for i in range(1, len(df)):
-        oversold.append(df[df.columns[1]].iloc[-i] <= df[df.columns[2]].iloc[-i])
-        overbought.append(df[df.columns[1]].iloc[-i] >= df[df.columns[0]].iloc[-i])
-
-    oversold_df = pd.DataFrame(oversold)
-    overbought_df = pd.DataFrame(overbought)
+def over_bought_and_sold(the_bars, df):
 
     o_sold_recent = False
     o_bought_recent = False
+    current_price = the_bars.close.values.tolist()[-1]
 
-    if oversold_df[len(oversold_df) // 2:].nunique()[0] == 2:
+    if current_price < df[df.columns[2]].iloc[-1]:
         o_sold_recent = True
-    if overbought_df[len(overbought_df) // 2:].nunique()[0] == 2:
+    if current_price > df[df.columns[0]].iloc[-1]:
         o_bought_recent = True
 
     return o_sold_recent, o_bought_recent
@@ -108,18 +100,6 @@ def get_bars(symbol):
     return crypto_bars
 
 
-def get_imports():
-    for name, val in globals().items():
-        if isinstance(val, types.ModuleType):
-            name = val.__name__.split('.')[0]
-        elif isinstance(val, type):
-            name = val.__module__.split('.')[0]
-        pkgs = {'PIL': 'Pillow', 'sklearn': 'scikit-learn'}
-        if name in pkgs.keys():
-            name = pkgs[name]
-        yield name
-
-
 no_action_count = 0
 transactions = []
 bars = get_bars(symbol=SYMBOL)
@@ -131,7 +111,7 @@ while True:
     close = bars.close.values.tolist()
 
     band_df = bollinger_bands(pd.Series(close))
-    o_sold, o_bought = over_bought_and_sold(band_df)
+    o_sold, o_bought = over_bought_and_sold(bars, band_df)
 
     # CHECK POSITIONS
     position = get_position(symbol=SYM)
@@ -141,9 +121,9 @@ while True:
     buy_low = bars.close.values.tolist()[-1] < transactions[-1]
     sell_high = bars.close.values.tolist()[-1] > transactions[-1]
 
-    if ((((position >= 0) & able_buy) & (should_buy_sma | o_sold)) & buy_low):
+    if (((((position >= 0) & able_buy) & should_buy_sma) & o_sold) & buy_low):
         print(f"\rPosition: {position} / Can Buy: {able_buy} / Can Sell: {able_sell} / SMA Buy: {should_buy_sma}"
-              f" / Oversold {o_sold} / Buy Low: {buy_low} / Sell High: {sell_high}")
+              f" / Oversold: {o_sold} / Buy Low: {buy_low} / Sell High: {sell_high}")
         api.submit_order(SYM, qty=QTY_PER_TRADE, side='buy', time_in_force="gtc")
         print(f'Symbol: {SYM} / Side: BUY / Quantity: {QTY_PER_TRADE}')
         transactions.append(bars.close.values.tolist()[-1])
@@ -151,7 +131,7 @@ while True:
         print(f"New Position: {get_position(symbol=SYM)}")
         print("*" * 20, 'buy\n')
         no_action_count = 0
-    elif ((((position >= 0) & able_sell) & ((should_buy_sma == False) | o_bought)) & sell_high):
+    elif (((((position >= 0) & able_sell) & (should_buy_sma == False)) & o_bought) & sell_high):
         print(f"\rPosition: {position} / Can Buy: {able_buy} / Can Sell: {able_sell} / SMA Buy: {should_buy_sma}"
               f" / Overbought: {o_bought} / Buy Low: {buy_low} / Sell High: {sell_high}")
         api.submit_order(SYM, qty=QTY_PER_TRADE, side='sell', time_in_force="gtc")
@@ -165,7 +145,8 @@ while True:
         no_action_count = 0
     else:
         print(f"\rPosition: {position} / Can Buy: {able_buy} / Can Sell: {able_sell} / SMA Buy: {should_buy_sma}"
-              f" / Overbought: {o_bought} / Oversold {o_sold} / Buy Low: {buy_low} / Sell High: {sell_high}", end='')
+              f" / Overbought: {o_bought} / Oversold: {o_sold} / Buy Low: {buy_low} /"
+              f" Sell High: {sell_high}", end='')
         time.sleep(5)
         no_action_count += 1
         for i in range(50):
