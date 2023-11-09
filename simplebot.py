@@ -106,14 +106,12 @@ bars = get_bars(symbol=SYMBOL)
 transactions.append(bars.close.values.tolist()[-1])
 
 while True:
-    # GET DATA
     bars = get_bars(symbol=SYMBOL)
     close = bars.close.values.tolist()
 
     band_df = bollinger_bands(pd.Series(close))
     o_sold, o_bought = over_bought_and_sold(bars, band_df)
 
-    # CHECK POSITIONS
     position = get_position(symbol=SYM)
     should_buy_sma = get_signal(bars.sma_fast, bars.sma_slow)
     able_buy = can_buy(SYM)
