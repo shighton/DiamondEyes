@@ -106,22 +106,25 @@ bars = get_bars(symbol=SYMBOL)
 transactions.append(bars.close.values.tolist()[-1])
 
 while True:
+    # Data collection
     bars = get_bars(symbol=SYMBOL)
     close = bars.close.values.tolist()
-
     band_df = bollinger_bands(pd.Series(close))
-    o_sold, o_bought = over_bought_and_sold(bars, band_df)
-
     position = get_position(symbol=SYM)
-    should_buy_sma = get_signal(bars.sma_fast, bars.sma_slow)
+
+    # Boolean values for conditions
     able_buy = can_buy(SYM)
     able_sell = can_sell(SYM)
+    should_buy_sma = get_signal(bars.sma_fast, bars.sma_slow)
+    o_sold, o_bought = over_bought_and_sold(bars, band_df)
     buy_low = bars.close.values.tolist()[-1] < transactions[-1]
     sell_high = bars.close.values.tolist()[-1] > transactions[-1]
 
     if (((((position >= 0) & able_buy) & should_buy_sma) & o_sold) & buy_low):
-        print(f"\rPosition: {position} / Can Buy: {able_buy} / Can Sell: {able_sell} / SMA Buy: {should_buy_sma}"
-              f" / Oversold: {o_sold} / Buy Low: {buy_low} / Sell High: {sell_high}")
+        print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
+              f" Can Sell: {'T' if able_sell else 'F'} / SMA Buy: {'T' if should_buy_sma else 'F'}"
+              f" / Oversold: {'T' if o_sold else 'F'} / Buy Low: {'T' if buy_low else 'F'} /"
+              f" Sell High: {'T' if sell_high else 'F'}")
         api.submit_order(SYM, qty=QTY_PER_TRADE, side='buy', time_in_force="gtc")
         print(f'Symbol: {SYM} / Side: BUY / Quantity: {QTY_PER_TRADE}')
         transactions.append(bars.close.values.tolist()[-1])
@@ -130,8 +133,10 @@ while True:
         print("*" * 20, 'buy\n')
         no_action_count = 0
     elif (((((position >= 0) & able_sell) & (should_buy_sma == False)) & o_bought) & sell_high):
-        print(f"\rPosition: {position} / Can Buy: {able_buy} / Can Sell: {able_sell} / SMA Buy: {should_buy_sma}"
-              f" / Overbought: {o_bought} / Buy Low: {buy_low} / Sell High: {sell_high}")
+        print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
+              f" Can Sell: {'T' if able_sell else 'F'} / SMA Buy: {'T' if should_buy_sma else 'F'}"
+              f" / Overbought: {'T' if o_bought else 'F'} / Buy Low: {'T' if buy_low else 'F'} /"
+              f" Sell High: {'T' if sell_high else 'F'}")
         api.submit_order(SYM, qty=QTY_PER_TRADE, side='sell', time_in_force="gtc")
         print(f'Symbol: {SYM} / Side: SELL / Quantity: {QTY_PER_TRADE}')
         transactions.pop()
@@ -142,12 +147,14 @@ while True:
         print("*" * 20, 'sell\n')
         no_action_count = 0
     else:
-        print(f"\rPosition: {position} / Can Buy: {able_buy} / Can Sell: {able_sell} / SMA Buy: {should_buy_sma}"
-              f" / Overbought: {o_bought} / Oversold: {o_sold} / Buy Low: {buy_low} /"
-              f" Sell High: {sell_high}", end='')
+        print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
+              f" Can Sell: {'T' if able_sell else 'F'} / SMA Buy: {'T' if should_buy_sma else 'F'}"
+              f" / Overbought: {'T' if o_bought else 'F'} / Oversold: {'T' if o_sold else 'F'} /"
+              f" Buy Low: {'T' if buy_low else 'F'} / Sell High: {'T' if sell_high else 'F'}", end='')
         time.sleep(5)
         no_action_count += 1
         for i in range(50):
-            print('\r' + 'No action #' + str(no_action_count) + '. Seconds until next trade: ' + str(50 - i), end='')
+            print('\r' + 'No action #' + str(no_action_count) + '. Seconds until next trade: ' +
+                  str(50 - i), end='')
             time.sleep(1)
             i += 1
