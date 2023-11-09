@@ -120,7 +120,7 @@ while True:
     buy_low = bars.close.values.tolist()[-1] < transactions[-1]
     sell_high = bars.close.values.tolist()[-1] > transactions[-1]
 
-    if (((((position >= 0) & able_buy) & should_buy_sma) & o_sold) & buy_low):
+    if (((((position >= 0) & able_buy) & should_buy_sma) & (o_sold | (o_bought == False))) & buy_low):
         print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
               f" Can Sell: {'T' if able_sell else 'F'} / SMA Buy: {'T' if should_buy_sma else 'F'}"
               f" / Oversold: {'T' if o_sold else 'F'} / Buy Low: {'T' if buy_low else 'F'} /"
@@ -132,7 +132,7 @@ while True:
         print(f"New Position: {get_position(symbol=SYM)}")
         print("*" * 20, 'buy\n')
         no_action_count = 0
-    elif (((((position >= 0) & able_sell) & (should_buy_sma == False)) & o_bought) & sell_high):
+    elif (((((position >= 0) & able_sell) & (should_buy_sma == False)) & (o_bought | (o_sold == False))) & sell_high):
         print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
               f" Can Sell: {'T' if able_sell else 'F'} / SMA Buy: {'T' if should_buy_sma else 'F'}"
               f" / Overbought: {'T' if o_bought else 'F'} / Buy Low: {'T' if buy_low else 'F'} /"
