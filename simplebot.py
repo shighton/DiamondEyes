@@ -129,8 +129,8 @@ def run():
             able_sell = can_sell(SYM)
             should_buy_sma = get_signal(bars.sma_fast, bars.sma_slow)
             o_sold, o_bought = over_bought_and_sold(bars, band_df)
-            buy_low = latest < transactions[-1]
-            sell_high = latest > transactions[-1]
+            buy_low = latest < transactions[-1] * 0.8
+            sell_high = latest > transactions[-1] * 1.2
 
             if (((((position >= 0) & able_buy) & should_buy_sma) & buy_low) & (o_sold | (o_bought == False))):
                 print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
@@ -154,8 +154,8 @@ def run():
                 api.submit_order(SYM, qty=QTY_PER_TRADE, side='sell', time_in_force="gtc")
                 print(f'Symbol: {SYM} / Side: SELL / Quantity: {QTY_PER_TRADE}')
                 transactions.pop()
-                latest = get_latest()
                 if len(transactions) == 0:
+                    latest = get_latest()
                     transactions.append(latest)
                 time.sleep(2)  # Give position time to update
                 print(f"New Position: {get_position(symbol=SYM)}")
