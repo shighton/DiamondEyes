@@ -109,7 +109,7 @@ def get_latest():
 
 def run():
     no_action_count = 0
-    transactions = []
+    transactions = [36543]
 
     while True:
         # Data collection
