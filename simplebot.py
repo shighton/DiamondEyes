@@ -129,8 +129,8 @@ def run():
             able_sell = can_sell(SYM)
             should_buy_sma = get_signal(bars.sma_fast, bars.sma_slow)
             o_sold, o_bought = over_bought_and_sold(bars, band_df)
-            buy_low = latest < transactions[-1] * 0.998
-            sell_high = latest > transactions[-1] * 1.002
+            buy_low = latest < transactions[-1] * 0.995
+            sell_high = latest > transactions[-1] * 1.005
 
             if (((((position >= 0) & able_buy) & should_buy_sma) & buy_low) & (o_sold | (o_bought == False))):
                 print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
