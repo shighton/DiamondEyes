@@ -37,16 +37,6 @@ SMA_FAST = 12
 SMA_SLOW = 24
 QTY_PER_TRADE = 1
 
-'''
-# Description is given in the article
-def get_pause():
-    now = datetime.now()
-    next_min = now.replace(second=0, microsecond=0) + timedelta(minutes=1)
-    pause = math.ceil((next_min - now).seconds)
-    print(f"Sleep for {pause}")
-    return pause
-'''
-
 
 # Same as the function in the random version
 def get_position(symbol):
@@ -72,38 +62,20 @@ def can_sell(symbol):
     return val > QTY_PER_TRADE
 
 
-# Returns a series with the moving average
-'''def get_sma(series, periods):
-    return series.rolling(periods).mean()
-
-
-# Checks whether we should buy (fast ma > slow ma)
-def get_signal(fast, slow):
-    # print(f"Fast {fast[-1]}  /  Slow: {slow[-1]}")
-    return fast[-1] > slow[-1]
-
-
-def bollinger_bands(series: pd.Series, length: int = 20, *,
-                    num_stds: tuple[float, ...] = (2, 0, -2), prefix: str = '') -> pd.DataFrame:
-    # Ref: https://stackoverflow.com/a/74283044/
-    rolling = series.rolling(length)
-    bband0 = rolling.mean()
-    bband_std = rolling.std(ddof=0)
-    df = pd.DataFrame({f'{prefix}{num_std}': (bband0 + (bband_std * num_std)) for num_std in num_stds})
-    sns.lineplot(df)
-    plt.show()
-    return df'''
-
-
 # Get up-to-date 1 minute data from Alpaca and add the moving averages
 def get_bars(symbol):
     yesterday_ts = datetime.timestamp(datetime.strptime(datetime.now().strftime('%Y-%m-%d'), '%Y-%m-%d')) - 86400
     yesterday = datetime.fromtimestamp(yesterday_ts).strftime('%Y-%m-%d')
 
     crypto_bars = api.get_crypto_bars(symbol, TimeFrame.Minute, start=yesterday).df
-    # crypto_bars[f'sma_fast'] = get_sma(crypto_bars.close, SMA_FAST)
-    # crypto_bars[f'sma_slow'] = get_sma(crypto_bars.close, SMA_SLOW)
     return crypto_bars
+
+
+def get_latest():
+    _bars = get_bars(symbol=SYMBOL)
+    _close = _bars.close.values.tolist()
+    _latest = _close[-1]
+    return _latest
 
 
 def get_imports():
@@ -338,62 +310,76 @@ class Agent:
 
 
 # Last x minutes of information in each state
-
-# Try smaller values
 window_size = 10
-
 step_size = 1
 
+bars = get_bars(symbol=SYMBOL)
+close = bars.close.values.tolist()
+close_length = len(close) - 1
 no_action_count = 0
+transactions = [36490]
 
 while True:
-    # GET DATA
+    # Data collection
     bars = get_bars(symbol=SYMBOL)
     close = bars.close.values.tolist()
-    # print(len(close))
     close_length = len(close) - 1
+    latest = close[-1]
 
-    model = Model(input_size=window_size, layer_size=500, output_size=3)
-    agent = Agent(a_model=model, money=starting_money, max_buy=1, max_sell=1)
-    agent.fit(iterations=50, checkpoint=50)
+    if len(transactions) == 0:
+        transactions.append(latest)
 
-    # CHECK POSITIONS
-    position = get_position(symbol=SYM)
-    # should_buy_sma = get_signal(bars.sma_fast, bars.sma_slow)
-    able_buy = can_buy(SYM)
-    able_sell = can_sell(SYM)
-    agent_buy, agent_sell, agent_good = agent.buy()
-    # if ((((((position >= 0) & able_buy) & agent_good) & agent_buy) & should_buy_sma) & (agent_sell != True)):
-    if ((((position >= 0) & able_buy) & agent_good) & agent_buy):
-        # print(f"\rPosition: {position} / Can Buy: {able_buy} / RL Buy: {agent_buy} / RL Sell: {agent_sell} / "
-        # f"RL Good: {agent_good} / SMA Buy: {should_buy_sma}")
-        print(f"\rPosition: {position} / Can Buy: {able_buy} / Can Sell: {able_sell} / RL Buy: {agent_buy} / "
-              f"RL Sell: {agent_sell} / RL Good: {agent_good}")
-        api.submit_order(SYM, qty=QTY_PER_TRADE, side='buy', time_in_force="gtc")
-        print(f'Symbol: {SYM} / Side: BUY / Quantity: {QTY_PER_TRADE}')
-        time.sleep(2)  # Give position time to update
-        print(f"New Position: {get_position(symbol=SYM)}")
-        print("*" * 20, 'buy\n')
-        no_action_count = 0
-    # elif ((((((position > 0) & able_sell) & agent_good) & (agent_buy != True)) & agent_sell) & (
-    # should_buy_sma != True)):
-    elif (((((position >= 0) & able_sell) & agent_good) & (agent_buy != True)) & agent_sell):
-        # print(f"\rPosition: {position} / Can Buy: {able_buy} / RL Buy: {agent_buy} / RL Sell: {agent_sell} / "
-        # f"RL Good: {agent_good} / SMA Buy: {should_buy_sma}")
-        print(f"\rPosition: {position} / Can Buy: {able_buy} / Can Sell: {able_sell} / RL Buy: {agent_buy} / "
-              f"RL Sell: {agent_sell} / RL Good: {agent_good}")
-        api.submit_order(SYM, qty=QTY_PER_TRADE, side='sell', time_in_force="gtc")
-        print(f'Symbol: {SYM} / Side: SELL / Quantity: {QTY_PER_TRADE}')
-        time.sleep(2)  # Give position time to update
-        print(f"New Position: {get_position(symbol=SYM)}")
-        print("*" * 20, 'sell\n')
-        no_action_count = 0
+    if len(close) > 20:
+        position = get_position(symbol=SYM)
+
+        model = Model(input_size=window_size, layer_size=500, output_size=3)
+        agent = Agent(a_model=model, money=starting_money, max_buy=1, max_sell=1)
+        agent.fit(iterations=50, checkpoint=50)
+
+        # Boolean values for conditions
+        able_buy = can_buy(SYM)
+        able_sell = can_sell(SYM)
+        agent_buy, agent_sell, agent_good = agent.buy()
+        buy_low = latest < transactions[-1] * 0.995
+        sell_high = latest > transactions[-1] * 1.005
+
+        if (((((position >= 0) & able_buy) & buy_low) & agent_good) & agent_buy):
+            print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
+                  f" Can Sell: {'T' if able_sell else 'F'} / Buy Low: {'T' if buy_low else 'F'} /"
+                  f" Sell High: {'T' if sell_high else 'F'}")
+            api.submit_order(SYM, qty=QTY_PER_TRADE, side='buy', time_in_force="gtc")
+            print(f'Symbol: {SYM} / Side: BUY / Quantity: {QTY_PER_TRADE}')
+            latest = get_latest()
+            transactions.append(latest)
+            time.sleep(2)  # Give position time to update
+            print(f"New Position: {get_position(symbol=SYM)}")
+            print("*" * 20, 'buy\n')
+            no_action_count = 0
+        elif ((((((position >= 0) & able_sell) & sell_high) & agent_good) & (agent_buy != True)) & agent_sell):
+            print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
+                  f" Can Sell: {'T' if able_sell else 'F'} / Buy Low: {'T' if buy_low else 'F'} /"
+                  f" Sell High: {'T' if sell_high else 'F'}")
+            api.submit_order(SYM, qty=QTY_PER_TRADE, side='sell', time_in_force="gtc")
+            print(f'Symbol: {SYM} / Side: SELL / Quantity: {QTY_PER_TRADE}')
+            transactions.pop()
+            if len(transactions) == 0:
+                latest = get_latest()
+                transactions.append(latest)
+            time.sleep(2)  # Give position time to update
+            print(f"New Position: {get_position(symbol=SYM)}")
+            print("*" * 20, 'sell\n')
+            no_action_count = 0
+        else:
+            print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
+                  f" Can Sell: {'T' if able_sell else 'F'} / Buy Low: {'T' if buy_low else 'F'} / "
+                  f"Sell High: {'T' if sell_high else 'F'}", end='')
+            time.sleep(5)
+            no_action_count += 1
+            for i in range(50):
+                print('\r' + 'No action #' + str(no_action_count) + '. Seconds until next trade: ' +
+                      str(50 - i), end='')
+                time.sleep(1)
+                i += 1
     else:
-        # print(f"\rPosition: {position} / Can Buy: {able_buy} / RL Buy: {agent_buy} / RL Sell: {agent_sell} / "
-        # f"RL Good: {agent_good} / SMA Buy: {should_buy_sma}", end='')
-        print(f"\rPosition: {position} / Can Buy: {able_buy} / Can Sell: {able_sell} / RL Buy: {agent_buy} / "
-              f"RL Sell: {agent_sell} / RL Good: {agent_good}", end='')
-        time.sleep(5)
-        no_action_count += 1
-        print('\r' + 'No action #' + str(no_action_count), end='')
-        time.sleep(2)
+        print("Waiting for required data.")
+        time.sleep(1200)

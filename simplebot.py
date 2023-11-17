@@ -76,7 +76,6 @@ def bollinger_bands(series: pd.Series, length: int = 20, *,
 
 
 def over_bought_and_sold(the_bars, df):
-
     o_sold_recent = False
     o_bought_recent = False
     current_price = the_bars.close.values.tolist()[-1]
@@ -109,7 +108,7 @@ def get_latest():
 
 def run():
     no_action_count = 0
-    transactions = [36543]
+    transactions = [36490]
 
     while True:
         # Data collection
@@ -168,11 +167,11 @@ def run():
                       f" Buy Low: {'T' if buy_low else 'F'} / Sell High: {'T' if sell_high else 'F'}", end='')
                 time.sleep(5)
                 no_action_count += 1
-                for i in range(50):
-                    print('\r' + 'No action #' + str(no_action_count) + '. Seconds until next trade: ' +
-                          str(50 - i), end='')
-                    time.sleep(1)
-                    i += 1
+                # for i in range(50):
+                #     print('\r' + 'No action #' + str(no_action_count) + '. Seconds until next trade: ' +
+                #           str(50 - i), end='')
+                #     time.sleep(1)
+                #     i += 1
         else:
             print("Waiting for required data.")
             time.sleep(1200)
