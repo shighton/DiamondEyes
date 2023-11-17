@@ -25,7 +25,7 @@ SYM = 'BTCUSD'
 starting_money = 100000
 SMA_FAST = 10
 SMA_SLOW = 20
-QTY_PER_TRADE = 1
+QTY_PER_TRADE = 0.5
 
 
 # Same as the function in the random version
@@ -167,11 +167,11 @@ def run():
                       f" Buy Low: {'T' if buy_low else 'F'} / Sell High: {'T' if sell_high else 'F'}", end='')
                 time.sleep(5)
                 no_action_count += 1
-                # for i in range(50):
-                #     print('\r' + 'No action #' + str(no_action_count) + '. Seconds until next trade: ' +
-                #           str(50 - i), end='')
-                #     time.sleep(1)
-                #     i += 1
+                for i in range(50):
+                    print('\r' + 'No action #' + str(no_action_count) + '. Seconds until next trade: ' +
+                          str(50 - i), end='')
+                    time.sleep(1)
+                    i += 1
         else:
             print("Waiting for required data.")
             time.sleep(1200)
