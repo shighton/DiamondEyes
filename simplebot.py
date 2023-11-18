@@ -2,6 +2,7 @@
 
 from alpaca_trade_api.rest import REST
 from alpaca.data.timeframe import TimeFrame
+from alpaca.trading.client import TradingClient
 from datetime import datetime
 import time
 import types
@@ -22,13 +23,13 @@ api = REST(key_id=KEY_ID, secret_key=SECRET_KEY, base_url=BASE_URL)
 
 SYMBOL = ['BTC/USD']
 SYM = 'BTCUSD'
-starting_money = 100000
+equity = float(TradingClient(KEY_ID, SECRET_KEY).get_account().equity)
 SMA_FAST = 10
 SMA_SLOW = 20
 QTY_PER_TRADE = 0.5
+num_appends = int(1 / QTY_PER_TRADE)
 
 
-# Same as the function in the random version
 def get_position(symbol):
     positions = api.list_positions()
     for p in positions:
@@ -40,10 +41,10 @@ def get_position(symbol):
 def can_buy(symbol):
     val = get_position(symbol)
     snap = api.get_latest_crypto_quotes(SYMBOL)['BTC/USD'].ap
-    if val > 0:
-        switch = starting_money / (val + 1) > snap
+    if val > QTY_PER_TRADE:
+        switch = (equity / (val + QTY_PER_TRADE)) > snap
     else:
-        switch = starting_money > snap
+        switch = equity > snap
     return switch
 
 
@@ -59,7 +60,6 @@ def get_sma(series, periods):
 
 # Checks whether we should buy (fast ma > slow ma)
 def get_signal(fast, slow):
-    # print(f"Fast {fast[-1]}  /  Slow: {slow[-1]}")
     return fast[-1] > slow[-1]
 
 
@@ -70,8 +70,6 @@ def bollinger_bands(series: pd.Series, length: int = 20, *,
     b_band0 = rolling.mean()
     b_band_std = rolling.std(ddof=0)
     df = pd.DataFrame({f'{prefix}{num_std}': (b_band0 + (b_band_std * num_std)) for num_std in num_stds})
-    # sns.lineplot(df)
-    # plt.show()
     return df
 
 
@@ -117,7 +115,8 @@ def run():
         latest = close[-1]
 
         if len(transactions) == 0:
-            transactions.append(latest)
+            for i in range(num_appends):
+                transactions.append(latest)
 
         if len(close) > 20:
             band_df = bollinger_bands(pd.Series(close))
@@ -128,8 +127,8 @@ def run():
             able_sell = can_sell(SYM)
             should_buy_sma = get_signal(bars.sma_fast, bars.sma_slow)
             o_sold, o_bought = over_bought_and_sold(bars, band_df)
-            buy_low = latest < transactions[-1] * 0.995
-            sell_high = latest > transactions[-1] * 1.005
+            buy_low = latest < transactions[-1] * 0.998
+            sell_high = latest > transactions[-1] * 1.002
 
             if (((((position >= 0) & able_buy) & should_buy_sma) & buy_low) & (o_sold | (o_bought == False))):
                 print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
@@ -139,7 +138,8 @@ def run():
                 api.submit_order(SYM, qty=QTY_PER_TRADE, side='buy', time_in_force="gtc")
                 print(f'Symbol: {SYM} / Side: BUY / Quantity: {QTY_PER_TRADE}')
                 latest = get_latest()
-                transactions.append(latest)
+                for i in range(num_appends):
+                    transactions.append(latest)
                 time.sleep(2)  # Give position time to update
                 print(f"New Position: {get_position(symbol=SYM)}")
                 print("*" * 20, 'buy\n')
@@ -155,7 +155,8 @@ def run():
                 transactions.pop()
                 if len(transactions) == 0:
                     latest = get_latest()
-                    transactions.append(latest)
+                    for i in range(num_appends):
+                        transactions.append(latest)
                 time.sleep(2)  # Give position time to update
                 print(f"New Position: {get_position(symbol=SYM)}")
                 print("*" * 20, 'sell\n')
