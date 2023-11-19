@@ -106,7 +106,7 @@ def get_latest():
 
 def run():
     no_action_count = 0
-    transactions = [36490]
+    transactions = [36694]
 
     while True:
         # Data collection
@@ -115,8 +115,7 @@ def run():
         latest = close[-1]
 
         if len(transactions) == 0:
-            for i in range(num_appends):
-                transactions.append(latest)
+            transactions.append(latest)
 
         if len(close) > 20:
             band_df = bollinger_bands(pd.Series(close))
@@ -138,8 +137,7 @@ def run():
                 api.submit_order(SYM, qty=QTY_PER_TRADE, side='buy', time_in_force="gtc")
                 print(f'Symbol: {SYM} / Side: BUY / Quantity: {QTY_PER_TRADE}')
                 latest = get_latest()
-                for i in range(num_appends):
-                    transactions.append(latest)
+                transactions.append(latest)
                 time.sleep(2)  # Give position time to update
                 print(f"New Position: {get_position(symbol=SYM)}")
                 print("*" * 20, 'buy\n')
@@ -155,8 +153,7 @@ def run():
                 transactions.pop()
                 if len(transactions) == 0:
                     latest = get_latest()
-                    for i in range(num_appends):
-                        transactions.append(latest)
+                    transactions.append(latest)
                 time.sleep(2)  # Give position time to update
                 print(f"New Position: {get_position(symbol=SYM)}")
                 print("*" * 20, 'sell\n')
