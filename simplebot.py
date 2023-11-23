@@ -5,11 +5,8 @@ from alpaca.data.timeframe import TimeFrame
 from alpaca.trading.client import TradingClient
 from datetime import datetime
 import time
-import types
 import warnings
 import pandas as pd
-import seaborn as sns
-from matplotlib import pyplot as plt
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=DeprecationWarning)
@@ -27,7 +24,6 @@ equity = float(TradingClient(KEY_ID, SECRET_KEY).get_account().equity)
 SMA_FAST = 10
 SMA_SLOW = 20
 QTY_PER_TRADE = 0.5
-num_appends = int(1 / QTY_PER_TRADE)
 
 
 def get_position(symbol):
