@@ -104,9 +104,51 @@ def get_latest():
     return _latest
 
 
+def get_transactions():
+    activities_df = pd.DataFrame(api.get_activities())
+    transactions = []
+
+    for i in range(len(activities_df)):
+        transactions.append([activities_df.values[i][0].price, activities_df.values[i][0].side,
+                             activities_df.values[i][0].qty])
+
+    transactions.reverse()
+
+    return transactions
+
+
+def get_active_positions():
+    transactions = get_transactions()
+    active_positions = []
+    active_positions_costs = []
+    buy = 0
+    sell = 0
+
+    for i in range(len(transactions)):
+        if transactions[i][1] == 'buy':
+            buy += float(transactions[i][2])
+            active_positions.append(transactions[i])
+        if transactions[i][1] == 'sell':
+            sell += float(transactions[i][2])
+
+    qty_difference = buy - sell
+
+    num_active_trades = int(qty_difference // QTY_PER_TRADE)
+
+    if num_active_trades < 0:
+        active_positions = active_positions[num_active_trades:]
+    else:
+        active_positions = []
+
+    for i in range(len(active_positions)):
+        active_positions_costs.append(float(active_positions[i][0]))
+
+    return active_positions_costs
+
+
 def run():
     no_action_count = 0
-    transactions = [36694]
+    transactions = get_active_positions()
 
     while True:
         # Data collection
