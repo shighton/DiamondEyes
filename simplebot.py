@@ -164,14 +164,18 @@ def run():
             able_sell = can_sell(SYM)
             should_buy_sma = get_signal(bars.sma_fast, bars.sma_slow)
             o_sold, o_bought = over_bought_and_sold(bars, band_df)
-            buy_low = latest < transactions[-1] * 0.998
+            # buy_low = latest < transactions[-1] * 0.998
             sell_high = latest > transactions[-1] * 1.002
 
-            if (((((position >= 0) & able_buy) & should_buy_sma) & buy_low) & (o_sold | (o_bought == False))):
+            # if (((((position >= 0) & able_buy) & should_buy_sma) & buy_low) & (o_sold | (o_bought == False))):
+            if ((((position >= 0) & able_buy) & should_buy_sma) & (o_sold | (o_bought == False))):
+                # print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
+                #       f" Can Sell: {'T' if able_sell else 'F'} / SMA Buy: {'T' if should_buy_sma else 'F'}"
+                #       f" / Oversold: {'T' if o_sold else 'F'} / Buy Low: {'T' if buy_low else 'F'} /"
+                #       f" Sell High: {'T' if sell_high else 'F'}")
                 print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
                       f" Can Sell: {'T' if able_sell else 'F'} / SMA Buy: {'T' if should_buy_sma else 'F'}"
-                      f" / Oversold: {'T' if o_sold else 'F'} / Buy Low: {'T' if buy_low else 'F'} /"
-                      f" Sell High: {'T' if sell_high else 'F'}")
+                      f" / Oversold: {'T' if o_sold else 'F'} / Sell High: {'T' if sell_high else 'F'}")
                 api.submit_order(SYM, qty=QTY_PER_TRADE, side='buy', time_in_force="gtc")
                 print(f'Symbol: {SYM} / Side: BUY / Quantity: {QTY_PER_TRADE}')
                 latest = get_latest()
@@ -182,10 +186,13 @@ def run():
                 no_action_count = 0
             elif (((((position >= 0) & able_sell) & (should_buy_sma == False)) & sell_high) &
                   (o_bought | (o_sold == False))):
+                # print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
+                #       f" Can Sell: {'T' if able_sell else 'F'} / SMA Buy: {'T' if should_buy_sma else 'F'}"
+                #       f" / Overbought: {'T' if o_bought else 'F'} / Buy Low: {'T' if buy_low else 'F'} /"
+                #       f" Sell High: {'T' if sell_high else 'F'}")
                 print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
                       f" Can Sell: {'T' if able_sell else 'F'} / SMA Buy: {'T' if should_buy_sma else 'F'}"
-                      f" / Overbought: {'T' if o_bought else 'F'} / Buy Low: {'T' if buy_low else 'F'} /"
-                      f" Sell High: {'T' if sell_high else 'F'}")
+                      f" / Overbought: {'T' if o_bought else 'F'} / Sell High: {'T' if sell_high else 'F'}")
                 api.submit_order(SYM, qty=QTY_PER_TRADE, side='sell', time_in_force="gtc")
                 print(f'Symbol: {SYM} / Side: SELL / Quantity: {QTY_PER_TRADE}')
                 transactions.pop()
@@ -197,10 +204,14 @@ def run():
                 print("*" * 20, 'sell\n')
                 no_action_count = 0
             else:
+                # print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
+                #       f" Can Sell: {'T' if able_sell else 'F'} / SMA Buy: {'T' if should_buy_sma else 'F'}"
+                #       f" / Overbought: {'T' if o_bought else 'F'} / Oversold: {'T' if o_sold else 'F'} /"
+                #       f" Buy Low: {'T' if buy_low else 'F'} / Sell High: {'T' if sell_high else 'F'}", end='')
                 print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
                       f" Can Sell: {'T' if able_sell else 'F'} / SMA Buy: {'T' if should_buy_sma else 'F'}"
                       f" / Overbought: {'T' if o_bought else 'F'} / Oversold: {'T' if o_sold else 'F'} /"
-                      f" Buy Low: {'T' if buy_low else 'F'} / Sell High: {'T' if sell_high else 'F'}", end='')
+                      f" Sell High: {'T' if sell_high else 'F'}", end='')
                 time.sleep(5)
                 no_action_count += 1
                 for i in range(50):
