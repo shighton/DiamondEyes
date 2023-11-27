@@ -5,34 +5,27 @@
 
 from alpaca_trade_api.rest import REST
 from alpaca.data.timeframe import TimeFrame
+from alpaca.trading.client import TradingClient
 from datetime import datetime
 import time
 import types
 import numpy as np
 import warnings
-
-'''
-from datetime import timedelta
-import math
 import pandas as pd
-import seaborn as sns
-import sys
-from matplotlib import pyplot as plt
-'''
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=DeprecationWarning)
 
 BASE_URL = "https://paper-api.alpaca.markets"
-KEY_ID = 'PKNTDYKX9SW3RRWPBD0Z'
-SECRET_KEY = '0HN9VFrPt0Gcpxkh0RMe6pCc9gA7vHAKHRaodfmQ'
+KEY_ID = 'PKM45IIG8RZK316FWHSE'
+SECRET_KEY = 'U19dAYAUqS9Wc9dH4QxGBAZSApL0b758XlhWWjds'
 
 # Instantiate REST API Connection
 api = REST(key_id=KEY_ID, secret_key=SECRET_KEY, base_url=BASE_URL)
 
 SYMBOL = ['BTC/USD']
 SYM = 'BTCUSD'
-starting_money = 100000
+starting_money = float(TradingClient(KEY_ID, SECRET_KEY).get_account().equity)
 SMA_FAST = 12
 SMA_SLOW = 24
 QTY_PER_TRADE = 1
@@ -100,6 +93,47 @@ def get_state(data, end_index, num_considered):
     return np.array([result])
 
 
+def get_transactions():
+    activities_df = pd.DataFrame(api.get_activities())
+    transactions = []
+
+    for i in range(len(activities_df)):
+        transactions.append([activities_df.values[i][0].price, activities_df.values[i][0].side,
+                             activities_df.values[i][0].qty])
+
+    transactions.reverse()
+    return transactions
+
+
+def get_active_positions():
+    transactions = get_transactions()
+    active_positions = []
+    active_positions_costs = []
+    buy = 0
+    sell = 0
+
+    for i in range(len(transactions)):
+        if transactions[i][1] == 'buy':
+            buy += float(transactions[i][2])
+            active_positions.append(transactions[i])
+        if transactions[i][1] == 'sell':
+            sell += float(transactions[i][2])
+
+    qty_difference = buy - sell
+
+    num_active_trades = int(qty_difference // QTY_PER_TRADE)
+
+    if num_active_trades < 0:
+        active_positions = active_positions[num_active_trades:]
+    else:
+        active_positions = []
+
+    for i in range(len(active_positions)):
+        active_positions_costs.append(float(active_positions[i][0]))
+
+    return active_positions_costs
+
+
 class DeepEvolutionStrategy:
     inputs = None
 
@@ -143,8 +177,6 @@ class DeepEvolutionStrategy:
                         * np.dot(A.T, rewards).T
                 )
 
-            # When the model is doing poorly for half the intended epochs,
-            # the loop will break to start another attempt increasing efficiency.
             if i == epoch // 2:
                 if self.reward_function(self.weights) < 0:
                     break
@@ -156,7 +188,6 @@ class DeepEvolutionStrategy:
                     '\riter %d. reward: %f'
                     % (i + 1, self.reward_function(self.weights)), end=''
                 )
-        # print('time taken to train:', time.time() - last_time, 'seconds')
 
 
 class Model:
@@ -266,10 +297,6 @@ class Agent:
                 inventory.append(total_buy)
                 quantity += buy_units
                 states_buy.append(t)
-                '''print(
-                    'time %d: buy %f units at price %f, total balance %f'
-                    % (t, buy_units, total_buy, money)
-                )'''
             elif action == 2 and len(inventory) > 0:
                 bought_price = inventory.pop(0)
                 if quantity > self.max_sell:
@@ -288,28 +315,12 @@ class Agent:
                     invest = ((total_sell - bought_price) / bought_price) * 100
                 except:
                     invest = 0
-                '''print(
-                    'time %d, sell %f units at price %f, investment %f %%, total balance %f,'
-                    % (t, sell_units, total_sell, invest, money)
-                )'''
             state = next_state
 
         invest = ((money - start_money) / start_money) * 100
-        # print('total gained %f, total investment %f %%' % (money - start_money, invest))
-        '''plt.figure(figsize=(20, 10))
-        plt.plot(close, label='true close', c='g')
-        plt.plot(
-            close, 'X', label='predict buy', markevery=states_buy, c='b'
-        )
-        plt.plot(
-            close, 'o', label='predict sell', markevery=states_sell, c='r'
-        )
-        plt.legend()
-        plt.show()'''
         return buy_switch, sell_switch, invest > 0
 
 
-# Last x minutes of information in each state
 window_size = 10
 step_size = 1
 
@@ -317,10 +328,9 @@ bars = get_bars(symbol=SYMBOL)
 close = bars.close.values.tolist()
 close_length = len(close) - 1
 no_action_count = 0
-transactions = [36490]
+transactions = get_active_positions()
 
 while True:
-    # Data collection
     bars = get_bars(symbol=SYMBOL)
     close = bars.close.values.tolist()
     close_length = len(close) - 1
@@ -329,57 +339,48 @@ while True:
     if len(transactions) == 0:
         transactions.append(latest)
 
-    if len(close) > 20:
-        position = get_position(symbol=SYM)
+    position = get_position(symbol=SYM)
 
-        model = Model(input_size=window_size, layer_size=500, output_size=3)
-        agent = Agent(a_model=model, money=starting_money, max_buy=1, max_sell=1)
-        agent.fit(iterations=50, checkpoint=50)
+    model = Model(input_size=window_size, layer_size=500, output_size=3)
+    agent = Agent(a_model=model, money=starting_money, max_buy=1, max_sell=1)
+    agent.fit(iterations=50, checkpoint=50)
 
-        # Boolean values for conditions
-        able_buy = can_buy(SYM)
-        able_sell = can_sell(SYM)
-        agent_buy, agent_sell, agent_good = agent.buy()
-        buy_low = latest < transactions[-1] * 0.995
-        sell_high = latest > transactions[-1] * 1.005
+    able_buy = can_buy(SYM)
+    able_sell = can_sell(SYM)
+    agent_buy, agent_sell, agent_good = agent.buy()
 
-        if (((((position >= 0) & able_buy) & buy_low) & agent_good) & agent_buy):
-            print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
-                  f" Can Sell: {'T' if able_sell else 'F'} / Buy Low: {'T' if buy_low else 'F'} /"
-                  f" Sell High: {'T' if sell_high else 'F'}")
-            api.submit_order(SYM, qty=QTY_PER_TRADE, side='buy', time_in_force="gtc")
-            print(f'Symbol: {SYM} / Side: BUY / Quantity: {QTY_PER_TRADE}')
+    if ((((position >= 0) & able_buy) & agent_good) & agent_buy):
+        print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
+              f" Can Sell: {'T' if able_sell else 'F'}")
+        api.submit_order(SYM, qty=QTY_PER_TRADE, side='buy', time_in_force="gtc")
+        print(f'Symbol: {SYM} / Side: BUY / Quantity: {QTY_PER_TRADE}')
+        latest = get_latest()
+        transactions.append(latest)
+        time.sleep(2)  # Give position time to update
+        print(f"New Position: {get_position(symbol=SYM)}")
+        print("*" * 20, 'buy\n')
+        no_action_count = 0
+    elif ((((((position >= 0) & able_sell)) & agent_good) & (agent_buy != True)) & agent_sell):
+        print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
+              f" Can Sell: {'T' if able_sell else 'F'}")
+        api.submit_order(SYM, qty=QTY_PER_TRADE, side='sell', time_in_force="gtc")
+        print(f'Symbol: {SYM} / Side: SELL / Quantity: {QTY_PER_TRADE}')
+        transactions.pop()
+        if len(transactions) == 0:
             latest = get_latest()
             transactions.append(latest)
-            time.sleep(2)  # Give position time to update
-            print(f"New Position: {get_position(symbol=SYM)}")
-            print("*" * 20, 'buy\n')
-            no_action_count = 0
-        elif ((((((position >= 0) & able_sell) & sell_high) & agent_good) & (agent_buy != True)) & agent_sell):
-            print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
-                  f" Can Sell: {'T' if able_sell else 'F'} / Buy Low: {'T' if buy_low else 'F'} /"
-                  f" Sell High: {'T' if sell_high else 'F'}")
-            api.submit_order(SYM, qty=QTY_PER_TRADE, side='sell', time_in_force="gtc")
-            print(f'Symbol: {SYM} / Side: SELL / Quantity: {QTY_PER_TRADE}')
-            transactions.pop()
-            if len(transactions) == 0:
-                latest = get_latest()
-                transactions.append(latest)
-            time.sleep(2)  # Give position time to update
-            print(f"New Position: {get_position(symbol=SYM)}")
-            print("*" * 20, 'sell\n')
-            no_action_count = 0
-        else:
-            print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
-                  f" Can Sell: {'T' if able_sell else 'F'} / Buy Low: {'T' if buy_low else 'F'} / "
-                  f"Sell High: {'T' if sell_high else 'F'}", end='')
-            time.sleep(5)
-            no_action_count += 1
-            for i in range(50):
-                print('\r' + 'No action #' + str(no_action_count) + '. Seconds until next trade: ' +
-                      str(50 - i), end='')
-                time.sleep(1)
-                i += 1
+        time.sleep(2)  # Give position time to update
+        print(f"New Position: {get_position(symbol=SYM)}")
+        print("*" * 20, 'sell\n')
+        no_action_count = 0
     else:
-        print("Waiting for required data.")
-        time.sleep(1200)
+        print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
+              f" Can Sell: {'T' if able_sell else 'F'}", end='')
+        time.sleep(5)
+        no_action_count += 1
+        for i in range(50):
+            print('\r' + 'No action #' + str(no_action_count) + '. Seconds until next trade: ' +
+                  str(50 - i), end='')
+            time.sleep(1)
+            i += 1
+

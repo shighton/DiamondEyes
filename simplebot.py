@@ -12,8 +12,8 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=DeprecationWarning)
 
 BASE_URL = "https://paper-api.alpaca.markets"
-KEY_ID = 'PKNTDYKX9SW3RRWPBD0Z'
-SECRET_KEY = '0HN9VFrPt0Gcpxkh0RMe6pCc9gA7vHAKHRaodfmQ'
+KEY_ID = 'PKM45IIG8RZK316FWHSE'
+SECRET_KEY = 'U19dAYAUqS9Wc9dH4QxGBAZSApL0b758XlhWWjds'
 
 # Instantiate REST API Connection
 api = REST(key_id=KEY_ID, secret_key=SECRET_KEY, base_url=BASE_URL)
