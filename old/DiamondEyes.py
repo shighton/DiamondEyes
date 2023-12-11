@@ -3,20 +3,23 @@
 
 import csv
 from datetime import datetime
+from dotenv import load_dotenv
+import os
 import requests
 import re
 
-RAPID_API_KEY = "4b6872356fmsh4de9af3f8449e91p1640e8jsn691817a923ae"
 RAPID_API_HOST = "coinranking1.p.rapidapi.com"
 
 # BTC
 coin_id = "Qwsogvtv82FCd"
 inputData = {}
 
+# This might not work, but I don't even use this anyway it's just to protect my account
+load_dotenv('..')
 
 def fetchStockData(coin_uuid):
     response = requests.request("GET", "https://api.coinranking.com/v2/coin/" + coin_uuid,
-                                headers={'X-RapidAPI-Key': RAPID_API_KEY,
+                                headers={'X-RapidAPI-Key': os.getenv('RAPID_API_KEY'),
                                          'X-RapidAPI-Host': RAPID_API_HOST})
 
     if response.status_code == 200:
