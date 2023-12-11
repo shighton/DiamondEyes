@@ -7,6 +7,8 @@ from alpaca_trade_api.rest import REST
 from alpaca.data.timeframe import TimeFrame
 from alpaca.trading.client import TradingClient
 from datetime import datetime
+from dotenv import load_dotenv
+import os
 import time
 import types
 import numpy as np
@@ -17,15 +19,14 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=DeprecationWarning)
 
 BASE_URL = "https://paper-api.alpaca.markets"
-KEY_ID = 'PKM45IIG8RZK316FWHSE'
-SECRET_KEY = 'U19dAYAUqS9Wc9dH4QxGBAZSApL0b758XlhWWjds'
+load_dotenv()
 
 # Instantiate REST API Connection
-api = REST(key_id=KEY_ID, secret_key=SECRET_KEY, base_url=BASE_URL)
+api = REST(key_id=os.getenv('KEY_ID'), secret_key=os.getenv('SECRET_KEY'), base_url=BASE_URL)
 
 SYMBOL = ['BTC/USD']
 SYM = 'BTCUSD'
-starting_money = float(TradingClient(KEY_ID, SECRET_KEY).get_account().equity)
+equity = float(TradingClient(os.getenv('KEY_ID'), os.getenv('SECRET_KEY')).get_account().equity)
 SMA_FAST = 12
 SMA_SLOW = 24
 QTY_PER_TRADE = 1
@@ -44,9 +45,9 @@ def can_buy(symbol):
     val = get_position(symbol)
     snap = api.get_latest_crypto_quotes(SYMBOL)['BTC/USD'].ap
     if val > 0:
-        switch = starting_money / (val + 1) > snap
+        switch = equity / (val + 1) > snap
     else:
-        switch = starting_money > snap
+        switch = equity > snap
     return switch
 
 
@@ -342,7 +343,7 @@ while True:
     position = get_position(symbol=SYM)
 
     model = Model(input_size=window_size, layer_size=500, output_size=3)
-    agent = Agent(a_model=model, money=starting_money, max_buy=1, max_sell=1)
+    agent = Agent(a_model=model, money=equity, max_buy=1, max_sell=1)
     agent.fit(iterations=50, checkpoint=50)
 
     able_buy = can_buy(SYM)

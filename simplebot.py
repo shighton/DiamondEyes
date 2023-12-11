@@ -4,6 +4,8 @@ from alpaca_trade_api.rest import REST
 from alpaca.data.timeframe import TimeFrame
 from alpaca.trading.client import TradingClient
 from datetime import datetime
+from dotenv import load_dotenv
+import os
 import time
 import warnings
 import pandas as pd
@@ -12,15 +14,15 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=DeprecationWarning)
 
 BASE_URL = "https://paper-api.alpaca.markets"
-KEY_ID = 'PKM45IIG8RZK316FWHSE'
-SECRET_KEY = 'U19dAYAUqS9Wc9dH4QxGBAZSApL0b758XlhWWjds'
+
+load_dotenv()
 
 # Instantiate REST API Connection
-api = REST(key_id=KEY_ID, secret_key=SECRET_KEY, base_url=BASE_URL)
+api = REST(key_id=os.getenv('KEY_ID'), secret_key=os.getenv('SECRET_KEY'), base_url=BASE_URL)
 
 SYMBOL = ['BTC/USD']
 SYM = 'BTCUSD'
-equity = float(TradingClient(KEY_ID, SECRET_KEY).get_account().equity)
+equity = float(TradingClient(os.getenv('KEY_ID'), os.getenv('SECRET_KEY')).get_account().equity)
 SMA_FAST = 10
 SMA_SLOW = 20
 QTY_PER_TRADE = 0.5
