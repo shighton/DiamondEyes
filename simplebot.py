@@ -15,6 +15,7 @@ warnings.simplefilter(action='ignore', category=DeprecationWarning)
 
 BASE_URL = "https://paper-api.alpaca.markets"
 
+# get environment variables (Create a .env file with Alpaca Keys for new users - Sabastian)
 load_dotenv()
 
 # Instantiate REST API Connection
