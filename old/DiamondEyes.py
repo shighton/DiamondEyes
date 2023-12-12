@@ -14,8 +14,7 @@ RAPID_API_HOST = "coinranking1.p.rapidapi.com"
 coin_id = "Qwsogvtv82FCd"
 inputData = {}
 
-# This might not work, but I don't even use this anyway it's just to protect my account
-load_dotenv('..')
+load_dotenv('../.env')
 
 def fetchStockData(coin_uuid):
     response = requests.request("GET", "https://api.coinranking.com/v2/coin/" + coin_uuid,
