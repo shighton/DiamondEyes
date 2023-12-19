@@ -16,7 +16,10 @@ warnings.simplefilter(action='ignore', category=DeprecationWarning)
 BASE_URL = "https://paper-api.alpaca.markets"
 
 # get environment variables (Create a .env file with Alpaca Keys for new users - Sabastian)
-load_dotenv('../.env')
+try:
+    load_dotenv('.env')
+except:
+    load_dotenv('../.env')
 
 # Instantiate REST API Connection
 api = REST(key_id=os.getenv('KEY_ID'), secret_key=os.getenv('SECRET_KEY'), base_url=BASE_URL)
@@ -225,4 +228,3 @@ def run():
         else:
             print("Waiting for required data.")
             time.sleep(1200)
-
