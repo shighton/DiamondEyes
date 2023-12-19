@@ -19,7 +19,12 @@ BASE_URL = "https://paper-api.alpaca.markets"
 try:
     load_dotenv('.env')
 except:
+    pass
+
+try:
     load_dotenv('../.env')
+except:
+    pass
 
 # Instantiate REST API Connection
 api = REST(key_id=os.getenv('KEY_ID'), secret_key=os.getenv('SECRET_KEY'), base_url=BASE_URL)
