@@ -10,6 +10,9 @@ import time
 import warnings
 import pandas as pd
 
+# IDEAS:
+# - Time the discrepency between "latest" calculation and final action taken
+
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=DeprecationWarning)
 
@@ -196,11 +199,12 @@ def run():
                       f" Can Sell: {'T' if able_sell else 'F'} / SMA Buy: {'T' if should_buy_sma else 'F'}"
                       f" / Overbought: {'T' if o_bought else 'F'} / Sell High: {'T' if sell_high else 'F'}")
                 api.submit_order(SYM, qty=QTY_PER_TRADE, side='sell', time_in_force="gtc")
-                print(f'Symbol: {SYM} / Side: SELL / Quantity: {QTY_PER_TRADE}')
+                print(f'Symbol: {SYM} / Side: SELL / Quantity: {QTY_PER_TRADE} / Last Buy: {transactions[-1]}'
+                      f' / Latest Close {latest}')
                 transactions.pop()
-                if len(transactions) == 0:
-                    latest = get_latest()
-                    transactions.append(latest)
+                # if len(transactions) == 0:
+                #     latest = get_latest()
+                #     transactions.append(latest)
                 time.sleep(2)  # Give position time to update
                 print(f"New Position: {get_position(symbol=SYM)}")
                 print("*" * 20, 'sell\n')
