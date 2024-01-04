@@ -145,7 +145,8 @@ def get_active_positions():
     if num_active_trades < 0:
         active_positions = active_positions[num_active_trades:]
     else:
-        active_positions = []
+        # active_positions = []
+        pass
 
     for i in range(len(active_positions)):
         active_positions_costs.append(float(active_positions[i][0]))
@@ -175,15 +176,9 @@ def run():
             able_sell = can_sell(SYM)
             should_buy_sma = get_signal(bars.sma_fast, bars.sma_slow)
             o_sold, o_bought = over_bought_and_sold(bars, band_df)
-            # buy_low = latest < (transactions[-1] * 0.996)
             sell_high = latest > (transactions[-1] * 1.004)
 
-            # if (((((position >= 0) & able_buy) & should_buy_sma) & buy_low) & (o_sold | (o_bought == False))):
             if ((((position >= 0) & able_buy) & should_buy_sma) & (o_sold | (o_bought == False))):
-                # print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
-                #       f" Can Sell: {'T' if able_sell else 'F'} / SMA Buy: {'T' if should_buy_sma else 'F'}"
-                #       f" / Oversold: {'T' if o_sold else 'F'} / Buy Low: {'T' if buy_low else 'F'} /"
-                #       f" Sell High: {'T' if sell_high else 'F'}")
                 print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
                       f" Can Sell: {'T' if able_sell else 'F'} / SMA Buy: {'T' if should_buy_sma else 'F'}"
                       f" / Oversold: {'T' if o_sold else 'F'} / Sell High: {'T' if sell_high else 'F'}")
@@ -197,10 +192,6 @@ def run():
                 no_action_count = 0
             elif (((((position >= 0) & able_sell) & (should_buy_sma == False)) & sell_high) &
                   (o_bought | (o_sold == False))):
-                # print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
-                #       f" Can Sell: {'T' if able_sell else 'F'} / SMA Buy: {'T' if should_buy_sma else 'F'}"
-                #       f" / Overbought: {'T' if o_bought else 'F'} / Buy Low: {'T' if buy_low else 'F'} /"
-                #       f" Sell High: {'T' if sell_high else 'F'}")
                 print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
                       f" Can Sell: {'T' if able_sell else 'F'} / SMA Buy: {'T' if should_buy_sma else 'F'}"
                       f" / Overbought: {'T' if o_bought else 'F'} / Sell High: {'T' if sell_high else 'F'}")
@@ -215,10 +206,6 @@ def run():
                 print("*" * 20, 'sell\n')
                 no_action_count = 0
             else:
-                # print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
-                #       f" Can Sell: {'T' if able_sell else 'F'} / SMA Buy: {'T' if should_buy_sma else 'F'}"
-                #       f" / Overbought: {'T' if o_bought else 'F'} / Oversold: {'T' if o_sold else 'F'} /"
-                #       f" Buy Low: {'T' if buy_low else 'F'} / Sell High: {'T' if sell_high else 'F'}", end='')
                 print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
                       f" Can Sell: {'T' if able_sell else 'F'} / SMA Buy: {'T' if should_buy_sma else 'F'}"
                       f" / Overbought: {'T' if o_bought else 'F'} / Oversold: {'T' if o_sold else 'F'} /"
@@ -233,3 +220,5 @@ def run():
         else:
             print("Waiting for required data.")
             time.sleep(1200)
+
+
