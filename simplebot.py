@@ -12,7 +12,6 @@ import pandas as pd
 
 # IDEAS:
 # - Time the discrepency between "latest" calculation and final action taken
-# - Potential bug: Once original positions are closed, agent will not sell high
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=DeprecationWarning)
