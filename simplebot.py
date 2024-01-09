@@ -149,8 +149,7 @@ def get_active_positions():
     if num_active_trades < 0:
         active_positions = active_positions[num_active_trades:]
     else:
-        # active_positions = []
-        pass
+        active_positions = active_positions[-num_active_trades:]
 
     for i in range(len(active_positions)):
         active_positions_costs.append(float(active_positions[i][0]))
