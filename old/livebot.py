@@ -10,7 +10,6 @@ from datetime import datetime
 from dotenv import load_dotenv
 import os
 import time
-import types
 import numpy as np
 import warnings
 import pandas as pd
@@ -20,7 +19,16 @@ warnings.simplefilter(action='ignore', category=DeprecationWarning)
 
 BASE_URL = "https://paper-api.alpaca.markets"
 
-load_dotenv('../.env')
+# get environment variables (Create a .env file with Alpaca Keys for new users - Sabastian)
+try:
+    load_dotenv('.env')
+except:
+    pass
+
+try:
+    load_dotenv('../.env')
+except:
+    pass
 
 # Instantiate REST API Connection
 api = REST(key_id=os.getenv('KEY_ID'), secret_key=os.getenv('SECRET_KEY'), base_url=BASE_URL)
@@ -46,7 +54,7 @@ def can_buy(symbol):
     val = get_position(symbol)
     snap = api.get_latest_crypto_quotes(SYMBOL)['BTC/USD'].ap
     if val > 0:
-        switch = equity / (val + 1) > snap
+        switch = equity / (val + QTY_PER_TRADE) > snap
     else:
         switch = equity > snap
     return switch
@@ -55,6 +63,39 @@ def can_buy(symbol):
 def can_sell(symbol):
     val = get_position(symbol)
     return val > QTY_PER_TRADE
+
+
+# Returns a series with the moving average
+def get_sma(series, periods):
+    return series.rolling(periods).mean()
+
+
+# Checks whether we should buy (fast ma > slow ma)
+def get_signal(fast, slow):
+    return fast[-1] > slow[-1]
+
+
+def bollinger_bands(series: pd.Series, length: int = 20, *,
+                    num_stds: tuple[float, ...] = (2, 0, -2), prefix: str = '') -> pd.DataFrame:
+    # Ref: https://stackoverflow.com/a/74283044/
+    rolling = series.rolling(length)
+    b_band0 = rolling.mean()
+    b_band_std = rolling.std(ddof=0)
+    df = pd.DataFrame({f'{prefix}{num_std}': (b_band0 + (b_band_std * num_std)) for num_std in num_stds})
+    return df
+
+
+def over_bought_and_sold(the_bars, df):
+    o_sold_recent = False
+    o_bought_recent = False
+    current_price = the_bars.close.values.tolist()[-1]
+
+    if current_price < df[df.columns[2]].iloc[-1]:
+        o_sold_recent = True
+    if current_price > df[df.columns[0]].iloc[-1]:
+        o_bought_recent = True
+
+    return o_sold_recent, o_bought_recent
 
 
 # Get up-to-date 1 minute data from Alpaca and add the moving averages
@@ -71,18 +112,6 @@ def get_latest():
     _close = _bars.close.values.tolist()
     _latest = _close[-1]
     return _latest
-
-
-def get_imports():
-    for name, val in globals().items():
-        if isinstance(val, types.ModuleType):
-            name = val.__name__.split('.')[0]
-        elif isinstance(val, type):
-            name = val.__module__.split('.')[0]
-        pkgs = {'PIL': 'Pillow', 'sklearn': 'scikit-learn'}
-        if name in pkgs.keys():
-            name = pkgs[name]
-        yield name
 
 
 def get_state(data, end_index, num_considered):
