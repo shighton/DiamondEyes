@@ -4,6 +4,7 @@ from alpaca_trade_api.rest import REST
 from alpaca.data.timeframe import TimeFrame
 from alpaca.trading.client import TradingClient
 from datetime import datetime
+from datetime import timedelta
 from dotenv import load_dotenv
 import os
 import time
@@ -120,7 +121,7 @@ def get_transactions():
 
     for i in range(len(activities_df)):
         transactions.append([activities_df.values[i][0].price, activities_df.values[i][0].side,
-                             activities_df.values[i][0].qty])
+                             activities_df.values[i][0].qty, activities_df.values[i][0].transaction_time.value])
 
     transactions.reverse()
 
@@ -133,6 +134,7 @@ def get_active_positions():
     active_positions_costs = []
     buy = 0
     sell = 0
+    been_a_week = False
 
     for i in range(len(transactions)):
         if transactions[i][1] == 'buy':
@@ -150,15 +152,19 @@ def get_active_positions():
     else:
         active_positions = active_positions[-num_active_trades:]
 
+    if num_active_trades > 0:
+        been_a_week = True if (datetime.now() - datetime.fromtimestamp((active_positions[-1][3] / 1000000000))) > \
+                              timedelta(days=7) else False
+
     for i in range(len(active_positions)):
         active_positions_costs.append(float(active_positions[i][0]))
 
-    return active_positions_costs
+    return active_positions_costs, been_a_week
 
 
 def run():
     no_action_count = 0
-    transactions = get_active_positions()
+    transactions, no_trades_in_a_week = get_active_positions()
 
     while True:
         # Data collection
@@ -192,12 +198,17 @@ def run():
                 print(f"New Position: {get_position(symbol=SYM)}")
                 print("*" * 20, 'buy\n')
                 no_action_count = 0
-            elif (((((position >= 0) & able_sell) & (should_buy_sma == False)) & sell_high) &
-                  (o_bought | (o_sold == False))):
+                _, no_trades_in_a_week = get_active_positions()
+            elif (((position >= 0) & no_trades_in_a_week) | ((((position >= 0) & able_sell) & (
+                    should_buy_sma == False)) & sell_high) & (o_bought | (o_sold == False))):
                 print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
                       f" Can Sell: {'T' if able_sell else 'F'} / SMA Buy: {'T' if should_buy_sma else 'F'}"
-                      f" / Overbought: {'T' if o_bought else 'F'} / Sell High: {'T' if sell_high else 'F'}")
-                api.submit_order(SYM, qty=QTY_PER_TRADE, side='sell', time_in_force="gtc")
+                      f" / Overbought: {'T' if o_bought else 'F'} / Sell High: {'T' if sell_high else 'F'}"
+                      f" / Trade Dump: {'T' if no_trades_in_a_week else 'F'}")
+                if able_sell:
+                    api.submit_order(SYM, qty=QTY_PER_TRADE, side='sell', time_in_force="gtc")
+                else:
+                    api.submit_order(SYM, qty=position, side='sell', time_in_force="gtc")
                 print(f'Symbol: {SYM} / Side: SELL / Quantity: {QTY_PER_TRADE} / Last Buy: {transactions[-1]}'
                       f' / Latest Close {latest}')
                 transactions.pop()
@@ -208,6 +219,7 @@ def run():
                 print(f"New Position: {get_position(symbol=SYM)}")
                 print("*" * 20, 'sell\n')
                 no_action_count = 0
+                _, no_trades_in_a_week = get_active_positions()
             else:
                 print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
                       f" Can Sell: {'T' if able_sell else 'F'} / SMA Buy: {'T' if should_buy_sma else 'F'}"
@@ -223,5 +235,3 @@ def run():
         else:
             print("Waiting for required data.")
             time.sleep(1200)
-
-
