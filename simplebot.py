@@ -134,7 +134,7 @@ def get_active_positions():
     active_positions_costs = []
     buy = 0
     sell = 0
-    been_a_week = False
+    two_days = False
 
     for i in range(len(transactions)):
         if transactions[i][1] == 'buy':
@@ -154,17 +154,17 @@ def get_active_positions():
 
     if num_active_trades > 0:
         been_a_week = True if (datetime.now() - datetime.fromtimestamp((active_positions[-1][3] / 1000000000))) > \
-                              timedelta(days=7) else False
+                              timedelta(days=2) else False
 
     for i in range(len(active_positions)):
         active_positions_costs.append(float(active_positions[i][0]))
 
-    return active_positions_costs, been_a_week
+    return active_positions_costs, two_days
 
 
 def run():
     no_action_count = 0
-    transactions, no_trades_in_a_week = get_active_positions()
+    transactions, no_trades_two_days = get_active_positions()
 
     while True:
         # Data collection
@@ -198,13 +198,13 @@ def run():
                 print(f"New Position: {get_position(symbol=SYM)}")
                 print("*" * 20, 'buy\n')
                 no_action_count = 0
-                _, no_trades_in_a_week = get_active_positions()
-            elif (((position >= 0) & no_trades_in_a_week) | ((((position >= 0) & able_sell) & (
+                _, no_trades_two_days = get_active_positions()
+            elif (((position >= 0) & no_trades_two_days) | ((((position >= 0) & able_sell) & (
                     should_buy_sma == False)) & sell_high) & (o_bought | (o_sold == False))):
                 print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
                       f" Can Sell: {'T' if able_sell else 'F'} / SMA Buy: {'T' if should_buy_sma else 'F'}"
                       f" / Overbought: {'T' if o_bought else 'F'} / Sell High: {'T' if sell_high else 'F'}"
-                      f" / Trade Dump: {'T' if no_trades_in_a_week else 'F'}")
+                      f" / Trade Dump: {'T' if no_trades_two_days else 'F'}")
                 if able_sell:
                     api.submit_order(SYM, qty=QTY_PER_TRADE, side='sell', time_in_force="gtc")
                 else:
@@ -219,7 +219,7 @@ def run():
                 print(f"New Position: {get_position(symbol=SYM)}")
                 print("*" * 20, 'sell\n')
                 no_action_count = 0
-                _, no_trades_in_a_week = get_active_positions()
+                _, no_trades_two_days = get_active_positions()
             else:
                 print(f"\rPosition: {position} / Can Buy: {'T' if able_buy else 'F'} /"
                       f" Can Sell: {'T' if able_sell else 'F'} / SMA Buy: {'T' if should_buy_sma else 'F'}"
