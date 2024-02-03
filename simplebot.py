@@ -153,7 +153,7 @@ def get_active_positions():
         active_positions = active_positions[-num_active_trades:]
 
     if num_active_trades > 0:
-        been_a_week = True if (datetime.now() - datetime.fromtimestamp((active_positions[-1][3] / 1000000000))) > \
+        two_days = True if (datetime.now() - datetime.fromtimestamp((active_positions[-1][3] / 1000000000))) > \
                               timedelta(days=2) else False
 
     for i in range(len(active_positions)):
