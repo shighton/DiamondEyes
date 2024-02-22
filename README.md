@@ -7,4 +7,4 @@ currently connected to BTC through a trading API. The algorithm is view only on 
 
 <p>Viewing is currently under development- serverless application needed.</p>
 
-<a href='https://www.thehighton.com/' target="_blank">Monty</a>
+<a href='https://www.thehighton.com/monty' target="_blank">Monty</a>
