@@ -4,4 +4,4 @@
 
 <p>Monty is the leading trading algorithm</p>
 
-<a href='https://www.thehighton.com/'>Monty</a>
+<a target='_blank' href='https://www.thehighton.com/'>Monty</a>
