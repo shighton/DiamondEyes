@@ -116,12 +116,13 @@ def get_latest():
 
 
 def get_transactions():
-    activities_df = pd.DataFrame(api.get_activities())
+    # activities_df = pd.DataFrame(api.get_activities())
+    activities_df = api.get_activities('FILL')
     transactions = []
 
     for i in range(len(activities_df)):
-        transactions.append([activities_df.values[i][0].price, activities_df.values[i][0].side,
-                             activities_df.values[i][0].qty, activities_df.values[i][0].transaction_time.value])
+        transactions.append([activities_df[i].price, activities_df[i].side,
+                             activities_df[i].qty, activities_df[i].transaction_time.value])
 
     transactions.reverse()
 
@@ -235,3 +236,4 @@ def run():
         else:
             print("Waiting for required data.")
             time.sleep(1200)
+
